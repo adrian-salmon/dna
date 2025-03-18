@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive DNA Model</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: radial-gradient(circle at center, 
+                rgb(41, 65, 171) 0%,
+                rgb(28, 41, 113) 50%,
+                rgb(14, 27, 77) 100%
+            );
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-family: Arial, sans-serif;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        #viewToggle {
+            margin-left: 10px;
+            padding: 5px 15px;
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #1a237e;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+            pointer-events: auto;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        #viewToggle:hover {
+            background-color: white;
+        }
+        #legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            color: white;
+            font-family: Arial, sans-serif;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .base-pair {
+            margin: 5px 0;
+        }
+        .adenine { color: #ff4444; }
+        .thymine { color: #44ff44; }
+        .cytosine { color: #4444ff; }
+        .guanine { color: #ffff44; }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <strong>DNA Base Pairs</strong>
+        <button id="viewToggle">Helix Mode</button>
+    </div>
+    <div id="legend">
+        <h3>DNA Base Pairs</h3>
+        <div class="base-pair adenine">Adenine (A)</div>
+        <div class="base-pair thymine">Thymine (T)</div>
+        <div class="base-pair cytosine">Cytosine (C)</div>
+        <div class="base-pair guanine">Guanine (G)</div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>
