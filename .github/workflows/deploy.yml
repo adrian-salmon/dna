@@ -5,7 +5,7 @@ on:
   # Runs on pushes targeting the default branch
   push:
     branches:
-      - temp-deploy # Change this to your main branch if needed
+      - main  # Changed from temp-deploy to main
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
