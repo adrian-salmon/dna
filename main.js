@@ -17,6 +17,9 @@ document.body.appendChild(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
+controls.enablePan = true;  // Allow panning
+controls.enableZoom = true; // Allow zooming
+controls.enableRotate = true; // Allow rotation
 
 // Camera position
 camera.position.z = 30;
@@ -201,79 +204,27 @@ scene.add(light2);
 const dna = createDNA();
 scene.add(dna);
 
-// Message handler for parent page communication
-window.addEventListener('message', function(event) {
-    // Verify the origin of the message for security
-    // Replace 'YOUR_PARENT_DOMAIN' with your actual parent page domain
-    // if (event.origin !== 'YOUR_PARENT_DOMAIN') return;
-
-    if (event.data.type === 'hover') {
-        const baseType = event.data.base;
-        if (baseType) {
-            // Find and highlight all bases of the specified type
-            const basesOfType = findBasesOfType(baseType);
-            basesOfType.forEach(base => {
-                // Reset any existing animation for this base
-                if (highlightStartTimes.has(base)) {
-                    highlightStartTimes.delete(base);
-                }
-                animateHighlight(base, performance.now());
-            });
-        }
-    }
-});
-
 // Animation state for highlighting
-const highlightStartTimes = new Map();
-const highlightDuration = 2000; // Total duration in milliseconds
+const maxIntensity = 0.8;       // Maximum emissive intensity
 const fadeInDuration = 500;     // Duration for fade in
 const fadeOutDuration = 500;    // Duration for fade out
-const maxIntensity = 0.8;       // Maximum emissive intensity
+const highlightStartTimes = new Map();
+let currentHighlightedBase = null;
 
-// Smooth highlight animation function
-function animateHighlight(object, currentTime) {
-    if (!highlightStartTimes.has(object)) {
-        highlightStartTimes.set(object, currentTime);
-    }
-    const startTime = highlightStartTimes.get(object);
-    const elapsed = currentTime - startTime;
-    
-    if (elapsed < fadeInDuration) {
-        // Fade in
-        const intensity = (elapsed / fadeInDuration) * maxIntensity;
-        object.material.emissiveIntensity = intensity;
-        requestAnimationFrame((time) => animateHighlight(object, time));
-    } else if (elapsed < highlightDuration - fadeOutDuration) {
-        // Stay bright
-        object.material.emissiveIntensity = maxIntensity;
-        requestAnimationFrame((time) => animateHighlight(object, time));
-    } else if (elapsed < highlightDuration) {
-        // Fade out
-        const fadeOutProgress = (elapsed - (highlightDuration - fadeOutDuration)) / fadeOutDuration;
-        const intensity = (1 - fadeOutProgress) * maxIntensity;
-        object.material.emissiveIntensity = intensity;
-        requestAnimationFrame((time) => animateHighlight(object, time));
-    } else {
-        // Reset and stop animation
-        object.material.emissiveIntensity = 0;
-        highlightStartTimes.delete(object);
-    }
-}
-
-// Function to find all bases of a specific type
-function findBasesOfType(baseType) {
-    const bases = [];
-    dna.traverse((child) => {
-        if (child.userData.type === baseType) {
-            bases.push(child);
+// Function to clear all highlights
+function clearAllHighlights() {
+    dna.traverse((object) => {
+        if (object.userData && object.userData.type) {
+            if (object.material) {
+                object.material.emissiveIntensity = 0;
+                delete object.userData.fadeOutStartTime;
+                delete object.userData.fadeOutStartIntensity;
+            }
         }
     });
-    return bases;
+    highlightStartTimes.clear();
+    currentHighlightedBase = null;
 }
-
-// Raycaster for interaction
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
 
 // Click handler
 function onMouseClick(event) {
@@ -290,18 +241,101 @@ function onMouseClick(event) {
             const info = document.getElementById('info');
             info.textContent = `Selected base: ${baseType} - ${getBaseName(baseType)}`;
             
+            // Clear any existing highlights first
+            clearAllHighlights();
+            
             // Find and highlight all bases of the same type
             const basesOfType = findBasesOfType(baseType);
             basesOfType.forEach(base => {
-                // Reset any existing animation for this base
-                if (highlightStartTimes.has(base)) {
-                    highlightStartTimes.delete(base);
-                }
-                animateHighlight(base, performance.now());
+                highlightStartTimes.set(base, performance.now());
             });
+            
+            currentHighlightedBase = baseType;
         }
     }
 }
+
+// Message handler for parent page communication
+window.addEventListener('message', (event) => {
+    if (event.data.type === 'hover') {
+        const baseType = event.data.base;
+        if (baseType) {
+            // Clear any existing highlights first
+            clearAllHighlights();
+            
+            // Find and highlight all bases of the specified type
+            const basesOfType = findBasesOfType(baseType);
+            basesOfType.forEach(base => {
+                highlightStartTimes.set(base, performance.now());
+            });
+            
+            currentHighlightedBase = baseType;
+            
+            // Update legend highlighting - first remove all highlights
+            document.querySelectorAll('.base-pair span').forEach(span => {
+                span.classList.remove('highlighted');
+                // Reset any inline styles that might have been added
+                span.style.transform = '';
+                span.style.textShadow = '';
+            });
+            
+            // Find the complementary base
+            const complementaryBase = baseType === 'A' ? 'T' : baseType === 'T' ? 'A' : baseType === 'C' ? 'G' : 'C';
+            
+            // Highlight both bases in the pair with a slight delay for the complementary base
+            const legendBase = document.querySelector(`.${baseType.toLowerCase()}`);
+            const legendComplementaryBase = document.querySelector(`.${complementaryBase.toLowerCase()}`);
+            
+            if (legendBase) {
+                legendBase.classList.add('highlighted');
+            }
+            if (legendComplementaryBase) {
+                setTimeout(() => {
+                    legendComplementaryBase.classList.add('highlighted');
+                }, 150); // Small delay for visual effect
+            }
+            
+            // Notify parent window that base is highlighted
+            window.parent.postMessage({
+                type: 'baseHighlighted',
+                base: baseType
+            }, '*');
+        }
+    } else if (event.data.type === 'clearHighlight') {
+        // Start fade out animation for all highlighted bases
+        const fadeOutStartTime = performance.now();
+        dna.traverse((object) => {
+            if (object.userData && object.userData.type) {
+                if (object.material && object.material.emissiveIntensity > 0) {
+                    object.userData.fadeOutStartIntensity = object.material.emissiveIntensity;
+                    object.userData.fadeOutStartTime = fadeOutStartTime;
+                }
+            }
+        });
+        highlightStartTimes.clear();
+        currentHighlightedBase = null;
+        
+        // Clear legend highlighting with a smooth transition
+        document.querySelectorAll('.base-pair span').forEach(span => {
+            span.classList.remove('highlighted');
+        });
+    }
+});
+
+// Find bases of a specific type
+function findBasesOfType(type) {
+    const bases = [];
+    dna.traverse((object) => {
+        if (object.userData && object.userData.type === type) {
+            bases.push(object);
+        }
+    });
+    return bases;
+}
+
+// Raycaster for interaction
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
 
 function getBaseName(base) {
     switch(base) {
@@ -313,33 +347,55 @@ function getBaseName(base) {
     }
 }
 
-// Window resize handler
-function onWindowResize() {
+// Handle window resize
+window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
-}
-
-// Event listeners
-window.addEventListener('click', onMouseClick);
-window.addEventListener('resize', onWindowResize);
+});
 
 // Animation loop
 function animate() {
     requestAnimationFrame(animate);
+    
+    // Update highlight animations
+    const currentTime = performance.now();
+    
+    // Handle fade in animations
+    highlightStartTimes.forEach((startTime, object) => {
+        const elapsed = currentTime - startTime;
+        if (elapsed < fadeInDuration) {
+            const intensity = (elapsed / fadeInDuration) * maxIntensity;
+            object.material.emissiveIntensity = intensity;
+        } else {
+            object.material.emissiveIntensity = maxIntensity;
+        }
+    });
+    
+    // Handle fade out animations
+    dna.traverse((object) => {
+        if (object.userData && object.userData.fadeOutStartTime) {
+            const elapsed = currentTime - object.userData.fadeOutStartTime;
+            if (elapsed < fadeOutDuration) {
+                const intensity = ((fadeOutDuration - elapsed) / fadeOutDuration) * object.userData.fadeOutStartIntensity;
+                object.material.emissiveIntensity = intensity;
+            } else {
+                object.material.emissiveIntensity = 0;
+                delete object.userData.fadeOutStartTime;
+                delete object.userData.fadeOutStartIntensity;
+            }
+        }
+    });
+    
+    // Rotate the DNA model
+    dna.rotation.y += 0.001;
+    
+    // Update controls
     controls.update();
-    dna.rotation.y += 0.001; // Slow rotation for better visualization
+    
+    // Render the scene
     renderer.render(scene, camera);
 }
 
-animate();
-
-// Add button click handler
-document.getElementById('viewToggle').addEventListener('click', function() {
-    const button = this;
-    if (button.textContent === 'Helix Mode') {
-        button.textContent = 'Ladder Mode';
-    } else {
-        button.textContent = 'Helix Mode';
-    }
-}); 
+// Start animation
+animate(); 

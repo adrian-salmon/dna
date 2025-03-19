@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .dna-interactive-container {
+            font-family: inherit;
+            line-height: 1.6;
+            margin: 20px 0;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .dna-base-link {
+            color: inherit;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        .dna-base-link:hover {
+            opacity: 0.8;
+        }
+        .dna-controls {
+            margin: 10px 0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .dna-info {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            flex-grow: 1;
+        }
+        .dna-view-toggle {
+            padding: 5px 15px;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .dna-iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+            margin: 10px 0;
+            background-color: transparent;
+        }
+    </style>
+</head>
+<body>
+    <div class="dna-interactive-container">
+        <p>
+            DNA is composed of four types of nitrogenous bases: 
+            <a href="#" class="dna-base-link" data-base="A">Adenine</a>, 
+            <a href="#" class="dna-base-link" data-base="T">Thymine</a>, 
+            <a href="#" class="dna-base-link" data-base="C">Cytosine</a>, and 
+            <a href="#" class="dna-base-link" data-base="G">Guanine</a>.
+        </p>
+
+        <div class="dna-controls">
+            <div id="dna-info" class="dna-info">DNA Base Pairs</div>
+            <button id="dna-view-toggle" class="dna-view-toggle">Helix Mode</button>
+        </div>
+
+        <iframe id="dna-visualization" class="dna-iframe" src="https://adriansalmoninteractives.github.io/dna-inline/"></iframe>
+
+        <script>
+            (function() {
+                // Wait for the iframe to load
+                document.getElementById('dna-visualization').addEventListener('load', function() {
+                    // Add hover event listeners to all links
+                    document.querySelectorAll('.dna-base-link').forEach(link => {
+                        link.addEventListener('mouseenter', function(e) {
+                            e.preventDefault();
+                            const base = this.dataset.base;
+                            const iframe = document.getElementById('dna-visualization');
+                            
+                            // Send message to iframe
+                            iframe.contentWindow.postMessage({
+                                type: 'hover',
+                                base: base
+                            }, '*');
+                        });
+
+                        // Prevent default link behavior
+                        link.addEventListener('click', function(e) {
+                            e.preventDefault();
+                        });
+                    });
+
+                    // Add view toggle functionality
+                    document.getElementById('dna-view-toggle').addEventListener('click', function() {
+                        const iframe = document.getElementById('dna-visualization');
+                        iframe.contentWindow.postMessage({
+                            type: 'toggleView'
+                        }, '*');
+                    });
+                });
+            })();
+        </script>
+    </div>
+</body>
+</html> 
