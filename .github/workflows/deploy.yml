@@ -47,8 +47,13 @@ jobs:
       - name: Copy dna-model.html
         run: cp dna-model.html dist/dna-model.html
 
-      - name: Copy main.js
-        run: cp main.js dist/main.js
+      - name: Update dna-model.html to use built files
+        run: |
+          cd dist
+          # Find the actual built JavaScript file
+          JS_FILE=$(ls assets/index-*.js)
+          # Update the script reference
+          sed -i "s|src=\"/assets/index-COxNBdQl.js\"|src=\"/$JS_FILE\"|g" dna-model.html
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
