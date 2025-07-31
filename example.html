@@ -96,7 +96,7 @@
                 // Set the correct iframe source based on the environment
                 const iframeSrc = window.location.hostname === 'localhost' 
                     ? 'http://localhost:5173/dna-inline/'
-                    : 'https://adriansalmoninteractives.github.io/dna-inline/';
+                    : 'https://adrian-salmon.github.io/dna/';
                 iframe.src = iframeSrc;
 
                 // Handle messages from the iframe
@@ -104,7 +104,7 @@
                     // Verify the origin for security
                     const allowedOrigins = [
                         'http://localhost:5173',
-                        'https://adriansalmoninteractives.github.io'
+                        'https://adrian-salmon.github.io'
                     ];
                     if (!allowedOrigins.includes(event.origin)) return;
 
