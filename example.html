@@ -95,8 +95,8 @@
                 
                 // Set the correct iframe source based on the environment
                 const iframeSrc = window.location.hostname === 'localhost' 
-                    ? 'http://localhost:5173/dna-inline/'
-                    : 'https://adrian-salmon.github.io/dna/';
+                    ? 'http://localhost:5173/dna-model.html'
+                    : 'https://adrian-salmon.github.io/dna/dna-model.html';
                 iframe.src = iframeSrc;
 
                 // Handle messages from the iframe
