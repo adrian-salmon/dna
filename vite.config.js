@@ -1,9 +1,9 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  base: '/dna-inline/', // Repository name
+  base: '/dna/', // Updated to match personal repository name
   build: {
-    outDir: 'dist', // Changed from 'src' to 'dist'
+    outDir: 'dist',
     rollupOptions: {
       output: {
         manualChunks: {
