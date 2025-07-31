@@ -3,68 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive DNA Model</title>
+    <title>DNA Interactive Example</title>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: radial-gradient(circle at center, 
-                rgb(41, 65, 171) 0%,
-                rgb(28, 41, 113) 50%,
-                rgb(14, 27, 77) 100%
-            );
-        }
-        canvas {
-            width: 100%;
-            height: 100%;
-        }
-        #legend {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background-color: rgba(0, 0, 0, 0.5);
-            padding: 10px;
-            border-radius: 5px;
-            color: white;
+        .dna-interactive-container {
             font-family: Arial, sans-serif;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            line-height: 1.6;
+            margin: 20px 0;
+            width: 100%;
+            max-width: 1200px;
+            padding: 0 10px;
+            box-sizing: border-box;
         }
-        .base-pair {
-            margin: 5px 0;
+        .dna-base-link {
+            color: #0066cc;
+            text-decoration: underline;
+            cursor: pointer;
+            font-weight: bold;
+            display: inline-block;
+            margin: 0 2px;
+        }
+        .dna-base-link:hover {
+            opacity: 0.8;
+        }
+        .dna-base-link.active {
+            color: #ff0000;
+        }
+        .dna-controls {
+            margin: 10px 0;
             display: flex;
             gap: 10px;
             align-items: center;
         }
-        .base-pair span {
-            display: inline-block;
+        .dna-info {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            flex-grow: 1;
         }
-        .base-pair span.highlighted {
-            font-weight: bold;
-            text-shadow: 0 0 10px currentColor;
-            transform: scale(1.1);
-            transition: all 0.3s ease;
+        .dna-iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+            margin: 10px 0;
+            background-color: transparent;
         }
-        .adenine { color: #ff4444; }
-        .thymine { color: #44ff44; }
-        .cytosine { color: #4444ff; }
-        .guanine { color: #ffff44; }
+        .dna-text {
+            margin: 15px 0;
+            line-height: 1.6;
+        }
+        @media (max-width: 600px) {
+            .dna-interactive-container {
+                margin: 10px 0;
+            }
+            .dna-iframe {
+                height: 400px;
+            }
+            .dna-text {
+                font-size: 14px;
+            }
+        }
     </style>
-  <script type="module" crossorigin src="/dna/assets/index-COxNBdQl.js"></script>
-  <link rel="modulepreload" crossorigin href="/dna/assets/three-BuIn8SSn.js">
 </head>
 <body>
-    <div id="legend">
-        <h3>DNA Base Pairs</h3>
-        <div class="base-pair">
-            <span class="adenine">Adenine (A)</span>
-            <span>-</span>
-            <span class="thymine">Thymine (T)</span>
+    <h1>DNA Structure and Base Pairs</h1>
+    
+    <p>
+        In this section, we'll explore the structure of DNA and its base pairs. DNA (Deoxyribonucleic acid) is a molecule that carries the genetic instructions used in the growth, development, functioning, and reproduction of all known living organisms.
+    </p>
+
+    <!-- DNA Interactive Smart Phrase - START -->
+    <div class="dna-interactive-container">
+        <div class="dna-text">
+            DNA is composed of four types of nitrogenous bases: 
+            <a href="#" class="dna-base-link" data-base="A">Adenine</a>, 
+            <a href="#" class="dna-base-link" data-base="T">Thymine</a>, 
+            <a href="#" class="dna-base-link" data-base="C">Cytosine</a>, and 
+            <a href="#" class="dna-base-link" data-base="G">Guanine</a>.
         </div>
-        <div class="base-pair">
-            <span class="cytosine">Cytosine (C)</span>
-            <span>-</span>
-            <span class="guanine">Guanine (G)</span>
+
+        <div class="dna-controls">
+            <div id="dna-info" class="dna-info">DNA Base Pairs</div>
         </div>
+
+        <iframe id="dnaInteractive" class="dna-iframe" src="./"></iframe>
+
+        <script>
+            (function() {
+                let activeBase = null;
+                const iframe = document.getElementById('dnaInteractive');
+                
+                // Set the correct iframe source based on the environment
+                const iframeSrc = window.location.hostname === 'localhost' 
+                    ? 'http://localhost:5173/dna-inline/'
+                    : 'https://adrian-salmon.github.io/dna/';
+                iframe.src = iframeSrc;
+
+                // Handle messages from the iframe
+                window.addEventListener('message', function(event) {
+                    // Verify the origin for security
+                    const allowedOrigins = [
+                        'http://localhost:5173',
+                        'https://adrian-salmon.github.io'
+                    ];
+                    if (!allowedOrigins.includes(event.origin)) return;
+
+                    if (event.data.type === 'baseHighlighted') {
+                        // Remove active class from all links
+                        document.querySelectorAll('.dna-base-link').forEach(link => {
+                            link.classList.remove('active');
+                        });
+                        // Add active class to matching link
+                        const matchingLink = document.querySelector(`.dna-base-link[data-base="${event.data.base}"]`);
+                        if (matchingLink) {
+                            matchingLink.classList.add('active');
+                        }
+                        activeBase = event.data.base;
+                    }
+                });
+
+                // Set up event listeners once iframe is loaded
+                iframe.addEventListener('load', function() {
+                    document.querySelectorAll('.dna-base-link').forEach(link => {
+                        link.addEventListener('mouseenter', function(e) {
+                            e.preventDefault();
+                            const base = this.dataset.base;
+                            if (activeBase !== base) {
+                                // Remove active class from all links
+                                document.querySelectorAll('.dna-base-link').forEach(l => {
+                                    l.classList.remove('active');
+                                });
+                                // Add active class to current link
+                                this.classList.add('active');
+                                // Send message to iframe
+                                iframe.contentWindow.postMessage({
+                                    type: 'hover',
+                                    base: base
+                                }, '*');
+                                activeBase = base;
+                            }
+                        });
+
+                        link.addEventListener('mouseleave', function(e) {
+                            e.preventDefault();
+                            if (activeBase === this.dataset.base) {
+                                this.classList.remove('active');
+                                // Send message to iframe to clear highlight
+                                iframe.contentWindow.postMessage({
+                                    type: 'clearHighlight'
+                                }, '*');
+                                activeBase = null;
+                            }
+                        });
+
+                        link.addEventListener('click', function(e) {
+                            e.preventDefault();
+                        });
+                    });
+                });
+
+                // Handle resize events to maintain aspect ratio
+                function updateIframeHeight() {
+                    const width = iframe.offsetWidth;
+                    iframe.style.height = Math.min(600, Math.max(400, width * 0.75)) + 'px';
+                }
+                window.addEventListener('resize', updateIframeHeight);
+                updateIframeHeight();
+            })();
+        </script>
     </div>
+    <!-- DNA Interactive Smart Phrase - END -->
+
+    <p>
+        The DNA molecule is made up of two long strands that wind around each other to form a double helix. Each strand is composed of repeating units called nucleotides. Each nucleotide contains a sugar molecule, a phosphate group, and one of four nitrogenous bases: Adenine (A), Thymine (T), Cytosine (C), or Guanine (G).
+    </p>
+
+    <p>
+        The bases pair up in a specific way: Adenine always pairs with Thymine, and Cytosine always pairs with Guanine. This is known as complementary base pairing. The interactive visualization above shows these base pairs in a 3D model. Hover over the base names to see how they pair up in the DNA structure.
+    </p>
 </body>
-</html>
+</html> 
