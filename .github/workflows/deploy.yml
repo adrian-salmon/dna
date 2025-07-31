@@ -52,8 +52,8 @@ jobs:
           cd dist
           # Find the actual built JavaScript file
           JS_FILE=$(ls assets/index-*.js)
-          # Update the script reference
-          sed -i "s|src=\"/assets/index-COxNBdQl.js\"|src=\"/$JS_FILE\"|g" dna-model.html
+          # Update the script reference to use the built file
+          sed -i "s|src=\"/main.js\"|src=\"/$JS_FILE\"|g" dna-model.html
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
