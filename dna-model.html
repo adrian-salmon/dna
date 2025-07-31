@@ -64,6 +64,21 @@
             <span class="guanine">Guanine (G)</span>
         </div>
     </div>
-    <script type="module" src="/main.js"></script>
+    <script>
+        // Dynamically load the correct JavaScript file
+        const script = document.createElement('script');
+        script.type = 'module';
+        
+        // Check if we're in development or production
+        if (window.location.hostname === 'localhost') {
+            // Development: use main.js
+            script.src = '/main.js';
+        } else {
+            // Production: use the built file
+            script.src = '/assets/index-COxNBdQl.js';
+        }
+        
+        document.body.appendChild(script);
+    </script>
 </body>
 </html> 
